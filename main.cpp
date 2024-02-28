@@ -105,15 +105,14 @@ static void UpdateJsonObject(nlohmann::json& object, const std::string& objectNa
         std::string key = it.key();
         std::string valueType;
 
-        if (it.value().is_string()) { valueType = "string"; }
-        else if (it.value().is_number_integer()) { valueType = "integer"; }
-        else if (it.value().is_number_float()) { valueType = "double"; }
-        else if (it.value().is_boolean()) { valueType = "boolean"; }
-        else if (it.value().is_array()) { 
-            UpdateJsonArray(object[key], key); continue; }
-        else if (it.value().is_object()) { UpdateJsonObject(object[key], key); continue; } // Recursively update the object
-        else if (it.value().is_null()) { continue; }
-        else { continue; }
+        if (it.value().is_string())                 { valueType = "string"; }
+        else if (it.value().is_number_integer())    { valueType = "integer"; }
+        else if (it.value().is_number_float())      { valueType = "double"; }
+        else if (it.value().is_boolean())           { valueType = "boolean"; }
+        else if (it.value().is_array())             { UpdateJsonArray(object[key], key);    continue; }
+        else if (it.value().is_object())            { UpdateJsonObject(object[key], key);   continue; }
+        else if (it.value().is_null())              { continue; }
+        else                                        { continue; }
 
         // Display info to user for item they're updating
         if (objectName == "")
@@ -187,101 +186,11 @@ static void UpdateJsonObject(nlohmann::json& object, const std::string& objectNa
 /// @param arrayName - name of the key for the array
 static void UpdateJsonArray(nlohmann::json& array, const std::string& arrayName)
 {
-    for (size_t i = 0; i < array.size(); ++i) 
+    for (size_t i = 0; i < array.size(); ++i)
     {
-        std::string valueType;
-        if (array[i].is_string())               { valueType = "string";     }
-        else if (array[i].is_number_integer())  { valueType = "integer";    }
-        else if (array[i].is_number_float())    { valueType = "double";     }
-        else if (array[i].is_boolean())         { valueType = "boolean";    }
-        else if (array[i].is_array())           { UpdateJsonArray(array[i], arrayName);  continue;   }
-        else if (array[i].is_object())          { std::string name = arrayName + "[" + std::to_string(i) + "]"; UpdateJsonObject(array[i], name); continue; }
-        else if (array[i].is_null())            { continue; }
-        else { continue;}
-
-        std::cout << "Enter value for element " << i << " in <" << arrayName << "> (" << valueType << "): ";
-
-        while (!g_exitRequested) 
-        {
-            std::string input;
-            std::cin >> input;
-
-            if (input == "-n") { break; }
-            if (input == "-x") { g_exitRequested = true; break; }
-
-            if (valueType == "string") 
-            {
-                array[i] = input;
-                break;
-            }
-            else if (valueType == "integer")
-            {
-                if (ValidateNumericInput(true, input))
-                {
-                    int value = std::stoi(input);
-                    array[i] = value;
-                    break;
-                }
-                else
-                {
-                    std::cout << "Invalid input for integer: " << input << '\n';
-                    std::cout << "Enter value for element " << i << " in <" << arrayName << ">(" << valueType << ") or enter \"-n\" to skip: ";
-                }
-            }
-            else if (valueType == "double")
-            {
-                if (ValidateNumericInput(false, input))
-                {
-                    double value = std::stod(input);
-                    array[i] = value;
-                    break;
-                }
-                else
-                {
-                    std::cout << "Invalid input for double: " << input  << '\n';
-                    std::cout << "Enter value for element " << i << " in <" << arrayName << "> (" << valueType << ") or enter \"-n\" to skip: ";
-                }
-            }
-            else if (valueType == "integer") 
-            {
-                try 
-                {
-                    int value = std::stoi(input);
-                    array[i] = value;
-                    break;
-                }
-                catch (const std::invalid_argument& e) 
-                {
-                    std::cout << "Invalid input. Please enter an integer value." << std::endl;
-                }
-            }
-            else if (valueType == "double") 
-            {
-                try 
-                {
-                    double value = std::stod(input);
-                    array[i] = value;
-                    break;
-                }
-                catch (const std::invalid_argument& e) 
-                {
-                    std::cout << "Invalid input. Please enter a double value." << std::endl;
-                }
-            }
-            else if (valueType == "boolean") 
-            {
-                if (ValidateBooleanInput(input))
-                {
-                    array[i] = (input == "true");
-                    break; // Exit loop if input is valid
-                }
-                else
-                {
-                    std::cout << "Invalid input for boolean. Please enter 'true' or 'false'." << '\n';
-                    std::cout << "Enter value for element " << i << " in <" << arrayName << "> (" << valueType << ") or enter \"-n\" to skip: ";
-                }
-            }
-        }
+        if (g_exitRequested) { return; }
+        std::string name = arrayName + "[" + std::to_string(i) + "]";
+        UpdateJsonObject(array[i], name);
     }
 }
 
