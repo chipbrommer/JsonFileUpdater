@@ -27,13 +27,27 @@ static void UpdateJsonArray(nlohmann::json& array, const std::string& arrayName)
 
 /// @brief Load the json file into a json object
 /// @param filename - filename/path to be loaded
-/// @return - json object of the file contents
-static nlohmann::json LoadJsonFile(const std::string& filename)
+/// @param outputObject - json object to place parsed content into
+/// @return - true on good load and parse, else false. 
+static bool LoadJsonFile(const std::string& filename, nlohmann::json& outputObject)
 {
     std::ifstream file(filename);
+    if (!file.is_open()) { std::cout << "Failed to open file: " + filename; return false; }
+
     nlohmann::json jsonData;
-    file >> jsonData;
-    return jsonData;
+    try 
+    { 
+        file >> jsonData;
+    }
+    catch (const std::exception& e) 
+    {
+        std::cout << "Failed to parse JSON from file: " << filename << '\n';
+        std::cout << "Error: " << e.what() << '\n';
+        return false;
+    }
+
+    outputObject = jsonData;
+    return true;
 }
 
 /// @brief Function to validate boolean input
@@ -47,6 +61,31 @@ static bool ValidateBooleanInput(const std::string& input)
         lowercaseInput += tolower(c);
     }
     return lowercaseInput == "true" || lowercaseInput == "false";
+}
+
+/// @brief Validate a string is numeric input only
+/// @param integer - bool to indicate if we are checking an integer or a float
+/// @param input - string input to be checked
+/// @return - true if value, else false
+static bool ValidateNumericInput(const bool integer, const std::string& input)
+{
+    bool validInput = true;
+
+    for (char c : input) 
+    {
+        if (integer && !std::isdigit(c) && c != '-')
+        {
+            validInput = false;
+            break;
+        }
+        else if (!std::isdigit(c) && c != '-' && c != '.') 
+        {
+            validInput = false;
+            break;
+        }
+    }
+
+    return validInput;
 }
 
 /// @brief Function to update JSON object
@@ -100,40 +139,43 @@ static void UpdateJsonObject(nlohmann::json& object, const std::string& objectNa
             }
             else if (valueType == "integer")
             {
-                try
+                if (ValidateNumericInput(true, input))
                 {
                     int value = std::stoi(input);
                     object[key] = value;
                     break;
                 }
-                catch (const std::invalid_argument& e)
+                else
                 {
-                    std::cout << "Invalid input. Please enter an integer value." << std::endl;
+                    std::cout << "Invalid input for integer: " << input << '\n';
+                    std::cout << "Enter value for " << key << " (" << valueType << ") or enter \"-n\" to skip: ";
                 }
             }
             else if (valueType == "double")
             {
-                try
+                if (ValidateNumericInput(false,input))
                 {
                     double value = std::stod(input);
                     object[key] = value;
                     break;
                 }
-                catch (const std::invalid_argument& e)
+                else
                 {
-                    std::cout << "Invalid input. Please enter a double value." << std::endl;
+                    std::cout << "Invalid input for double: " << input << '\n';
+                    std::cout << "Enter value for " << key << " (" << valueType << ") or enter \"-n\" to skip: ";
                 }
             }
             else if (valueType == "boolean")
             {
-                if (input == "true" || input == "false")
+                if (ValidateBooleanInput(input))
                 {
                     object[key] = (input == "true");
-                    break;
+                    break; // Exit loop if input is valid
                 }
                 else
                 {
-                    std::cout << "Invalid input for boolean. Please enter 'true' or 'false'." << std::endl;
+                    std::cout << "Invalid input for boolean. Please enter 'true' or 'false'." << '\n';
+                    std::cout << "Enter value for " << key << " (" << valueType << ") or enter \"-n\" to skip: ";
                 }
             }
         }
@@ -172,6 +214,34 @@ static void UpdateJsonArray(nlohmann::json& array, const std::string& arrayName)
                 array[i] = input;
                 break;
             }
+            else if (valueType == "integer")
+            {
+                if (ValidateNumericInput(true, input))
+                {
+                    int value = std::stoi(input);
+                    array[i] = value;
+                    break;
+                }
+                else
+                {
+                    std::cout << "Invalid input for integer: " << input << '\n';
+                    std::cout << "Enter value for element " << i << " in <" << arrayName << ">(" << valueType << ") or enter \"-n\" to skip: ";
+                }
+            }
+            else if (valueType == "double")
+            {
+                if (ValidateNumericInput(false, input))
+                {
+                    double value = std::stod(input);
+                    array[i] = value;
+                    break;
+                }
+                else
+                {
+                    std::cout << "Invalid input for double: " << input  << '\n';
+                    std::cout << "Enter value for element " << i << " in <" << arrayName << "> (" << valueType << ") or enter \"-n\" to skip: ";
+                }
+            }
             else if (valueType == "integer") 
             {
                 try 
@@ -200,14 +270,15 @@ static void UpdateJsonArray(nlohmann::json& array, const std::string& arrayName)
             }
             else if (valueType == "boolean") 
             {
-                if (input == "true" || input == "false") 
+                if (ValidateBooleanInput(input))
                 {
                     array[i] = (input == "true");
-                    break;
+                    break; // Exit loop if input is valid
                 }
-                else 
+                else
                 {
-                    std::cout << "Invalid input for boolean. Please enter 'true' or 'false'." << std::endl;
+                    std::cout << "Invalid input for boolean. Please enter 'true' or 'false'." << '\n';
+                    std::cout << "Enter value for element " << i << " in <" << arrayName << "> (" << valueType << ") or enter \"-n\" to skip: ";
                 }
             }
         }
@@ -267,7 +338,7 @@ int main()
         }
         catch(const std::exception& e)
         {
-            std::cerr << "Error converting input." << '\n';
+            std::cerr << "Error converting input: " << e.what() << '\n';
         }
         
     }
@@ -277,16 +348,30 @@ int main()
     std::cout << "You selected: " << selectedFile << '\n';
     std::cout << "\nEnter '-n' to skip any item.\nEnter '-x' to exit the update and save any edits.\n\n";
 
-    // Load JSON file
-    nlohmann::json configFile = LoadJsonFile(selectedFile);
+    try
+    {
+        // Load JSON file
+        nlohmann::json configFile;
+        if (LoadJsonFile(selectedFile, configFile) == false) { return -1; }
 
-    // Call update function
-    UpdateJsonObject(configFile);
+        // Call update function
+        UpdateJsonObject(configFile);
 
-    // Save updated JSON to file
-    std::ofstream outputFile(selectedFile);
-    outputFile << std::setw(4) << configFile << std::endl;
-    std::cout << "Changes saved to " << selectedFile << std::endl;
+        // Save updated JSON to file
+        std::ofstream outputFile(selectedFile);
+
+        if (!outputFile.is_open()) 
+        {
+            throw std::runtime_error("Failed to open file for saving changes: " + selectedFile);
+        }
+
+        outputFile << std::setw(4) << configFile << std::endl;
+        std::cout << "Changes saved to " << selectedFile << std::endl;
+    }
+    catch (const std::exception& e) 
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
 
     return 0;
 }
