@@ -196,14 +196,9 @@ static void UpdateJsonArray(nlohmann::json& array, const std::string& arrayName)
 
 /// @brief main working function. Program entry point. 
 /// @return 1
-int main() 
+int main(int argc, char* argv[])
 {
-    // Hard coded file paths for now.
-    std::vector<std::string> fileList = { 
-        "C:\\Users\\chipb\\Desktop\\updater_settings.json", 
-        "C:\\Users\\chipb\\Desktop\\updater_settings.json", 
-        "C:\\Users\\chipb\\Desktop\\updater_settings.json" 
-    };
+    std::string selectedFile;
 
     // Display title 
     std::string title = "\n=========================\n";
@@ -211,50 +206,68 @@ int main()
     title            += "=========================\n\n";
     std::cout << title;
 
-    // List the available files
-    std::cout << "Available files:" << '\n';
-    int index = 1;
-    for (const auto& file : fileList) 
+    // Only attempt to process the default filepath files if we didnt receive
+    // a passed in filepath as an argument
+    if (argc <= 1)
     {
-        std::cout << "\t[" << index++ << "] " << file << std::endl;
-    }
+        // Vector to hold the list of files
+        std::vector<std::string> fileList = {
+            "C:\\Users\\chipb\\Desktop\\updater_settings.json",
+            "C:\\Users\\chipb\\Desktop\\updater_settings.json",
+            "C:\\Users\\chipb\\Desktop\\updater_settings.json"
+        };
 
-    // Capture file selection and make sure its within bounds.
-    // accepts '-x' to close the program. 
-    std::string textFileIndex;
-    int fileIndex = 0;
-    while (!g_exitRequested)
-    {
-        std::cout << "Enter the number of the file you want to load: ";
-        std::cin >> textFileIndex;
-
-        if (textFileIndex == "-x") { g_exitRequested = true; break; }
-
-        // Validate user input
-        try {
-            fileIndex = stoi(textFileIndex);
-            if (fileIndex >= 1 && fileIndex <= fileList.size())
-            {
-                // Input is valid, exit loop
-                break;
-            }
-            else
-            {
-                std::cout << "Invalid index. Please enter a number between 1 and " << fileList.size() << std::endl;
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            }
-        }
-        catch(const std::exception& e)
+        // List the available files
+        std::cout << "Available files:" << '\n';
+        int index = 1;
+        for (const auto& file : fileList)
         {
-            std::cerr << "Error converting input: " << e.what() << '\n';
+            std::cout << "\t[" << index++ << "] " << file << std::endl;
         }
-        
-    }
 
-    // Notify the selection and available flags. 
-    std::string selectedFile = fileList[fileIndex - 1];
-    std::cout << "You selected: " << selectedFile << '\n';
+        // Capture file selection and make sure its within bounds.
+        // accepts '-x' to close the program. 
+        std::string textFileIndex;
+        int fileIndex = 0;
+        while (!g_exitRequested)
+        {
+            std::cout << "Enter the number of the file you want to load: ";
+            std::cin >> textFileIndex;
+
+            if (textFileIndex == "-x") { g_exitRequested = true; break; }
+
+            // Validate user input
+            try 
+            {
+                fileIndex = stoi(textFileIndex);
+                if (fileIndex >= 1 && fileIndex <= fileList.size())
+                {
+                    // Input is valid, exit loop
+                    break;
+                }
+                else
+                {
+                    std::cout << "Invalid index. Please enter a number between 1 and " << fileList.size() << std::endl;
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "Error converting input: " << e.what() << '\n';
+            }
+
+        }
+
+        // Notify the selection and available flags. 
+        selectedFile = fileList[fileIndex - 1];
+        std::cout << "You selected: " << selectedFile << '\n';
+    }
+    else
+    {
+        selectedFile = argv[1];
+    }
+    
     std::cout << "\nEnter '-n' to skip any item.\nEnter '-x' to exit the update and save any edits.\n\n";
 
     try
