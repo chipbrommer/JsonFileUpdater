@@ -96,10 +96,7 @@ static void UpdateJsonObject(nlohmann::json& object, const std::string& objectNa
     for (auto it = object.begin(); it != object.end(); ++it)
     {
         // Return if exit requested - At top for recursive catch
-        if (g_exitRequested)
-        {
-            return;
-        }
+        if (g_exitRequested) { return; }
 
         // Get the key name and determine the type of the value
         std::string key = it.key();
@@ -116,9 +113,15 @@ static void UpdateJsonObject(nlohmann::json& object, const std::string& objectNa
 
         // Display info to user for item they're updating
         if (objectName == "")
-            std::cout << "Enter value for " << key << " (" << valueType << "): ";
+        {
+            std::cout << "Item: " << key << " - Current Value (" << valueType << "): " << it.value() << "\n";
+            std::cout << "Enter new value: ";
+        }
         else
-            std::cout << "Enter value for " << key << " within <" << objectName << "> (" << valueType << "): ";
+        {
+            std::cout << "Object: " << objectName << " - Item: " << key << " - Current Value (" << valueType << "): " << it.value() << "\n";
+            std::cout << "Enter new value: ";
+        }
 
         while (!g_exitRequested)
         {
@@ -169,7 +172,7 @@ static void UpdateJsonObject(nlohmann::json& object, const std::string& objectNa
                 if (ValidateBooleanInput(input))
                 {
                     object[key] = (input == "true");
-                    break; // Exit loop if input is valid
+                    break;
                 }
                 else
                 {
@@ -288,7 +291,15 @@ int main(int argc, char* argv[])
         }
 
         outputFile << std::setw(4) << configFile << std::endl;
-        std::cout << "Changes saved to " << selectedFile << std::endl;
+        std::cout << "\nChanges saved to " << selectedFile << '\n';
+        outputFile.close();
+
+        std::string printInput;
+        std::cout << "\nEnter 'y' to print the file: ";
+        std::cin >> printInput;
+
+        if (printInput == "y")
+            std::cout << '\n' << std::setw(4) << configFile << std::endl;
     }
     catch (const std::exception& e) 
     {
