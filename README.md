@@ -1,4 +1,4 @@
-# ConfigurationFileUpdater
+# JsonFileUpdater
 
 A simple JSON file updater that will receive a filepath via argument or display the list of pre-declared files for the user to update. 
 
