@@ -13,8 +13,6 @@ project ("ConfigurationFileUpdater")
 
 # Add source to this project's executable.
 add_executable (ConfigurationFileUpdater 
-    "ConfigurationFileUpdater.cpp" 
-    "ConfigurationFileUpdater.h" 
     "main.cpp"
 )
 
