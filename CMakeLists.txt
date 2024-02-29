@@ -23,4 +23,21 @@ endif()
 # Include nlohmanns json
 target_include_directories(ConfigurationFileUpdater PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/nlohmann)
 
-# TODO: Add tests and install targets if needed.
+# Download nlohmann json if it doesn't exist
+include(FetchContent)
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG        v3.10.2
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+# Set the desired name for the executable with an extension based on platform
+if (WIN32)
+    set_target_properties(ConfigurationFileUpdater PROPERTIES OUTPUT_NAME "FileUpdater.exe")
+elseif (APPLE)
+    set_target_properties(ConfigurationFileUpdater PROPERTIES OUTPUT_NAME "FileUpdater")
+elseif (UNIX)
+    set_target_properties(ConfigurationFileUpdater PROPERTIES OUTPUT_NAME "FileUpdater.out")
+endif()
+

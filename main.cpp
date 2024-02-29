@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
 
         // Notify the selection and available flags. 
         selectedFile = fileList[fileIndex - 1];
-        std::cout << "You selected: " << selectedFile << '\
+        std::cout << "You selected: " << selectedFile << '\n';
     }
     else
     {
