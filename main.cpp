@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
 
     // Display title 
     std::string title = "\n=========================\n";
-    title            += "   Config File Updater   \n";
+    title            += "    JSON File Updater   \n";
     title            += "=========================\n\n";
     std::cout << title;
 
