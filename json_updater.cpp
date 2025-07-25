@@ -16,6 +16,8 @@
 #include <vector>
 #include "nlohmann/json.hpp"
 #include "cxxopts.hpp"
+//
+/////////////////////////////////////////////////////////////////////////////////
 
 constexpr int MAJOR_VERSION = 0;
 constexpr int MINOR_VERSION = 0;
@@ -60,7 +62,7 @@ static std::string to_lower(const std::string& str) {
  * @param path The input path to normalize.
  * @return The normalized absolute path with forward slashes.
  */
-static std::string normalizePath(const std::string& path) {
+static std::string normalize_path(const std::string& path) {
     std::string normalized = path;
     std::replace(normalized.begin(), normalized.end(), '\\', '/');
     return std::filesystem::absolute(normalized).string();
@@ -70,7 +72,7 @@ static std::string normalizePath(const std::string& path) {
  * @brief Handles interrupt signals (e.g., Ctrl+C) to exit gracefully.
  * @param signum The signal number received.
  */
-static void signalHandler(int signum) {
+static void signal_handler(int signum) {
     std::cerr << "\nInterrupt signal received. Exiting without saving changes.\n";
     g_exitRequested = true;
     g_saveChanges = false;
@@ -82,7 +84,7 @@ static void signalHandler(int signum) {
  * @param outputObject The json object to store the parsed data.
  * @return True if the file was loaded and parsed successfully, false otherwise.
  */
-static bool LoadJsonFile(const std::string& filename, nlohmann::json& outputObject) {
+static bool load_json_file(const std::string& filename, nlohmann::json& outputObject) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Failed to open file '" << filename << "': " << strerror(errno) << '\n';
@@ -103,12 +105,12 @@ static bool LoadJsonFile(const std::string& filename, nlohmann::json& outputObje
  * @param dirPath The directory path to scan.
  * @return A vector of absolute paths to JSON files found.
  */
-static std::vector<std::string> DetectJsonFiles(const std::string& dirPath) {
+static std::vector<std::string> detect_json_files(const std::string& dirPath) {
     std::vector<std::string> jsonFiles;
     try {
         for (const auto& entry : std::filesystem::directory_iterator(dirPath)) {
             if (entry.is_regular_file() && entry.path().extension() == ".json") {
-                jsonFiles.push_back(normalizePath(entry.path().string()));
+                jsonFiles.push_back(normalize_path(entry.path().string()));
             }
         }
     }
@@ -123,7 +125,7 @@ static std::vector<std::string> DetectJsonFiles(const std::string& dirPath) {
  * @param jsonFiles The list of JSON file paths to display.
  * @return The selected file path, or empty string if none selected or user quits.
  */
-static std::string SelectJsonFile(const std::vector<std::string>& jsonFiles) {
+static std::string select_json_file(const std::vector<std::string>& jsonFiles) {
     if (jsonFiles.empty()) {
         std::cerr << "No JSON files found in the directory.\n";
         return "";
@@ -171,7 +173,7 @@ static std::string SelectJsonFile(const std::vector<std::string>& jsonFiles) {
  * @param argv Array of command-line argument strings.
  * @return An Options struct containing parsed arguments.
  */
-static Options parseOptions(int argc, char* argv[]) {
+static Options parse_options(int argc, char* argv[]) {
     cxxopts::Options options("json_updater", "JSON File Updater");
     options.add_options()
         ("f,file", "JSON file to update", cxxopts::value<std::string>())
@@ -193,14 +195,14 @@ static Options parseOptions(int argc, char* argv[]) {
  * @param array The JSON array to update.
  * @param arrayName The name of the array for display purposes.
  */
-static void UpdateJsonArray(nlohmann::json& array, const std::string& arrayName);
+static void update_json_array(nlohmann::json& array, const std::string& arrayName);
 
 /**
  * @brief Updates a JSON object by prompting the user for new values.
  * @param object The JSON object to update.
  * @param objectName The name of the object for display purposes (optional).
  */
-static void UpdateJsonObject(nlohmann::json& object, const std::string& objectName = "") {
+static void update_json_object(nlohmann::json& object, const std::string& objectName = "") {
     for (auto it = object.begin(); it != object.end() && !g_exitRequested; ++it) {
         std::string key = it.key();
         std::string valueType;
@@ -210,8 +212,8 @@ static void UpdateJsonObject(nlohmann::json& object, const std::string& objectNa
         case nlohmann::json::value_t::number_unsigned: valueType = "integer"; break;
         case nlohmann::json::value_t::number_float: valueType = "double"; break;
         case nlohmann::json::value_t::boolean: valueType = "boolean"; break;
-        case nlohmann::json::value_t::array: UpdateJsonArray(object[key], key); continue;
-        case nlohmann::json::value_t::object: UpdateJsonObject(object[key], key); continue;
+        case nlohmann::json::value_t::array: update_json_array(object[key], key); continue;
+        case nlohmann::json::value_t::object: update_json_object(object[key], key); continue;
         default: continue;
         }
         std::cout << (objectName.empty() ? "Item: " : "Object: " + objectName + " - Item: ")
@@ -273,15 +275,10 @@ static void UpdateJsonObject(nlohmann::json& object, const std::string& objectNa
     }
 }
 
-/**
- * @brief Updates a JSON array by processing each element.
- * @param array The JSON array to update.
- * @param arrayName The name of the array for display purposes.
- */
-static void UpdateJsonArray(nlohmann::json& array, const std::string& arrayName) {
+static void update_json_array(nlohmann::json& array, const std::string& arrayName) {
     for (size_t i = 0; i < array.size() && !g_exitRequested; ++i) {
         std::string name = arrayName + "[" + std::to_string(i) + "]";
-        UpdateJsonObject(array[i], name);
+        update_json_object(array[i], name);
     }
 }
 
@@ -290,9 +287,9 @@ static void UpdateJsonArray(nlohmann::json& array, const std::string& arrayName)
  * @param selectedFile The path to the JSON file to process.
  * @return True if processing was successful, false if file loading failed.
  */
-static bool ProcessSingleFile(const std::string& selectedFile) {
+static bool process_single_file(const std::string& selectedFile) {
     nlohmann::json configFile;
-    if (!LoadJsonFile(selectedFile, configFile)) {
+    if (!load_json_file(selectedFile, configFile)) {
         g_exitRequested = false; // Reset for next iteration
         return false;
     }
@@ -303,7 +300,7 @@ static bool ProcessSingleFile(const std::string& selectedFile) {
         << "  '-x' to exit file without saving\n\n";
     g_exitRequested = false; // Reset before editing
     g_saveChanges = true; // Reset before editing
-    UpdateJsonObject(configFile);
+    update_json_object(configFile);
     if (!g_exitRequested || (g_exitRequested && g_saveChanges)) {
         std::ofstream outputFile(selectedFile);
         if (!outputFile.is_open()) {
@@ -335,15 +332,15 @@ static bool ProcessSingleFile(const std::string& selectedFile) {
  * @param opts The parsed command-line options.
  * @return True if processing completed successfully, false if an error occurred.
  */
-static bool HandleFileSelectionAndProcessing(const Options& opts) {
+static bool handle_file_selection_and_processing(const Options& opts) {
     while (!g_quitProgram) {
         std::string selectedFile;
         if (!opts.dirPath.empty()) {
             // Scan specified directory for JSON files
-            std::string dirPath = normalizePath(opts.dirPath);
+            std::string dirPath = normalize_path(opts.dirPath);
             std::cout << "Detecting JSON files in directory: " << dirPath << " ..." << std::endl;
-            std::vector<std::string> jsonFiles = DetectJsonFiles(dirPath);
-            selectedFile = SelectJsonFile(jsonFiles);
+            std::vector<std::string> jsonFiles = detect_json_files(dirPath);
+            selectedFile = select_json_file(jsonFiles);
             if (selectedFile.empty()) {
                 if (g_quitProgram) break; // User chose to quit
                 if (!g_exitRequested) {
@@ -354,13 +351,13 @@ static bool HandleFileSelectionAndProcessing(const Options& opts) {
             }
         }
         else if (!opts.filePath.empty()) {
-            selectedFile = normalizePath(opts.filePath);
+            selectedFile = normalize_path(opts.filePath);
         }
         else {
             // Default to scanning current directory
             std::cout << "Detecting JSON files in current directory." << std::endl;
-            std::vector<std::string> jsonFiles = DetectJsonFiles(".");
-            selectedFile = SelectJsonFile(jsonFiles);
+            std::vector<std::string> jsonFiles = detect_json_files(".");
+            selectedFile = select_json_file(jsonFiles);
             if (selectedFile.empty()) {
                 if (g_quitProgram) break; // User chose to quit
                 if (!g_exitRequested) {
@@ -371,7 +368,7 @@ static bool HandleFileSelectionAndProcessing(const Options& opts) {
             }
         }
 
-        ProcessSingleFile(selectedFile);
+        process_single_file(selectedFile);
     }
     return true;
 }
@@ -386,9 +383,9 @@ int main(int argc, char* argv[]) {
     std::cout << "\n=========================\n"
         << "    JSON File Updater   \n"
         << "=========================\n" << std::endl;
-    signal(SIGINT, signalHandler);
+    signal(SIGINT, signal_handler);
     try {
-        Options opts = parseOptions(argc, argv);
+        Options opts = parse_options(argc, argv);
         if (opts.showHelp) {
             std::cout << "JSON File Updater v" << MAJOR_VERSION << "." << MINOR_VERSION << "." << BUILD_VERSION << "\n\n"
                 << "Usage: json_updater [options] [directory]\n\n"
@@ -406,7 +403,7 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
-        if (!HandleFileSelectionAndProcessing(opts)) {
+        if (!handle_file_selection_and_processing(opts)) {
             return 1;
         }
     }
