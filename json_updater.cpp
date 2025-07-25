@@ -19,7 +19,7 @@
 
 constexpr int MAJOR_VERSION = 0;
 constexpr int MINOR_VERSION = 0;
-constexpr int BUILD_VERSION = 1;
+constexpr int BUILD_VERSION = 2;
 
 static bool g_exitRequested = false;
 static bool g_saveChanges = true;
